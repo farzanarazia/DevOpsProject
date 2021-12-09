@@ -1,0 +1,40 @@
+---
+- hosts: all
+  become: true
+  tasks:
+  - name: install java and docker
+    apt:
+      name:
+      - default-jdk
+      - docker.io
+      - python3-pip
+      state: present
+
+  - name: start docker service
+    service:
+      name: docker
+      state: started
+      enabled: true
+      
+  - name: Install Docker SDK for Python
+    pip:
+      name: "docker<5"
+    become: yes
+
+  - name: check if container already exists
+    docker_container_info:
+      name: bootcampjava
+    register: result
+
+  - name: remove duplicate container
+    docker_container:
+      name: bootcampjava
+      state: absent
+    when: result.exists 
+      
+  - name: deploy bootcamp application
+    command: docker run -it -d -p 8888:8888 --name bootcampjava sfarzanarazia/hubimages1:bcjava1.0
+  handlers:
+  - name: run update
+    apt:
+      update_cache: yes
